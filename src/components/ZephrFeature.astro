@@ -1,0 +1,19 @@
+---
+/**
+ * Emits a Zephr feature-tag comment pair.
+ *
+ * In production the Zephr CDN replaces the area between the markers with
+ * real content. In local dev `src/middleware.ts` does the same via the
+ * SIMULATE_ZEPHR env flag.
+ *
+ * Use this wrapper instead of writing the raw HTML comments — it keeps
+ * the marker syntax consistent everywhere.
+ */
+interface Props {
+  id: string;
+}
+const { id } = Astro.props;
+---
+<Fragment set:html={`<!-- ZEPHR_FEATURE ${id} -->`} />
+<slot />
+<Fragment set:html={`<!-- ZEPHR_FEATURE_END ${id} -->`} />

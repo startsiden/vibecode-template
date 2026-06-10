@@ -1,0 +1,35 @@
+---
+import '../styles/globals.css';
+import FinansavisenHeader from '../components/FinansavisenHeader.astro';
+import FinansavisenFooter from '../components/FinansavisenFooter.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  /**
+   * When true, render the real Finansavisen header + footer via Zephr.
+   * Locally these show through the SIMULATE_ZEPHR middleware.
+   * Defaults to false — the agent flips it on per the journalist's
+   * answer to "do you want the FA header?".
+   */
+  showFaChrome?: boolean;
+}
+
+const { title, description, showFaChrome = false } = Astro.props;
+---
+<!doctype html>
+<html lang="no">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+  </head>
+  <body class="min-h-screen bg-white font-sans text-gray-900 antialiased">
+    {showFaChrome && <FinansavisenHeader />}
+    <main>
+      <slot />
+    </main>
+    {showFaChrome && <FinansavisenFooter />}
+  </body>
+</html>

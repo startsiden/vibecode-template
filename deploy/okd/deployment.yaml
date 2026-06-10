@@ -1,0 +1,53 @@
+# OpenShift / OKD Deployment stub for a Finansavisen Vibe-Starter app.
+# Profico DevOps owns the actual cluster config — this is the starting
+# point. Replace placeholders before applying.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: REPLACE_APP_NAME
+  labels:
+    app: REPLACE_APP_NAME
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: REPLACE_APP_NAME
+  template:
+    metadata:
+      labels:
+        app: REPLACE_APP_NAME
+    spec:
+      containers:
+        - name: web
+          image: REPLACE_REGISTRY/REPLACE_APP_NAME:REPLACE_TAG
+          ports:
+            - containerPort: 3000
+              name: http
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: HOST
+              value: 0.0.0.0
+            - name: PORT
+              value: "3000"
+            # SIMULATE_ZEPHR intentionally unset in prod.
+            # Zephr CDN handles real injection at the edge.
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30

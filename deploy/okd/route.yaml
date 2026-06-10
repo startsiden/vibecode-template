@@ -1,0 +1,19 @@
+# OpenShift Route — exposes the Service at a public hostname.
+# If the app sits behind Zephr at finansavisen.no, coordinate the
+# upstream hostname + Zephr origin config with DevOps + Hegnar.
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: REPLACE_APP_NAME
+  labels:
+    app: REPLACE_APP_NAME
+spec:
+  host: REPLACE_APP_NAME.finansavisen.no
+  to:
+    kind: Service
+    name: REPLACE_APP_NAME
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

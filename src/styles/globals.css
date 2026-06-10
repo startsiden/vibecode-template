@@ -1,0 +1,74 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+
+/*
+ * Finansavisen brand tokens — palette mirrors
+ * zephr-components/colors.json (the canonical FA palette).
+ *
+ * Edit only via skills/theme.md so the rest of the FA family stays
+ * visually consistent.
+ */
+@theme {
+  --font-sans: "Inter Variable", "Inter", system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif;
+
+  --color-blue-50:  #E6F1FC;
+  --color-blue-100: #CDE3F9;
+  --color-blue-200: #9AC7F4;
+  --color-blue-300: #68ABEE;
+  --color-blue-400: #358FE9;
+  --color-blue-500: #0373E3;
+  --color-blue-600: #025CB6;
+  --color-blue-700: #024588;
+  --color-blue-800: #012E5B;
+  --color-blue-900: #01172D;
+
+  --color-gray-25:  #F8F9F9;
+  --color-gray-50:  #F1F2F3;
+  --color-gray-75:  #EAECED;
+  --color-gray-100: #D5D9DC;
+  --color-gray-200: #BABFC4;
+  --color-gray-300: #9EA6AD;
+  --color-gray-400: #838C95;
+  --color-gray-500: #67737E;
+  --color-gray-600: #525C65;
+  --color-gray-700: #3E454C;
+  --color-gray-800: #292E32;
+  --color-gray-900: #151719;
+
+  --color-red-50:  #F6DDE0;
+  --color-red-100: #F4CACF;
+  --color-red-200: #EBB5BB;
+  --color-red-300: #E09099;
+  --color-red-500: #CA2B3D;
+  --color-red-600: #97212E;
+  --color-red-800: #4E1118;
+
+  --color-green-50:  #D9F7E9;
+  --color-green-200: #AEEAD0;
+  --color-green-500: #19BE76;
+  --color-green-600: #14985E;
+  --color-green-800: #083923;
+
+  --color-orange-50:  #FFEBDF;
+  --color-orange-200: #FBBE98;
+  --color-orange-500: #F77222;
+  --color-orange-600: #C65815;
+  --color-orange-800: #5A2607;
+
+  --color-purple-50:  #E3D3F3;
+  --color-purple-200: #C8A7E8;
+  --color-purple-500: #8C46CE;
+  --color-purple-600: #633092;
+  --color-purple-800: #442066;
+
+  --color-yellow-50:  #FEF2CD;
+  --color-yellow-200: #FEE9A9;
+  --color-yellow-500: #FCC727;
+  --color-yellow-600: #D1A11F;
+  --color-yellow-800: #7A5C10;
+  --color-yellow-900: #4E3A09;
+
+  /* Matches hegnar-web's main-header breakpoint */
+  --breakpoint-header: 1130px;
+}

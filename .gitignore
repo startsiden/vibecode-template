@@ -1,0 +1,22 @@
+node_modules
+dist
+.astro
+.cache
+
+# Env files — keep .env.example committed, never the real ones
+.env
+.env.*
+!.env.example
+
+# Local OS noise
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode
+.idea
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
