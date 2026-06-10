@@ -21,43 +21,86 @@ You are NOT building a SPA. You are NOT shipping a React app. Reach for islands 
 
 ## Step 0 — Bootstrap
 
-This file ships at the root of the canonical template repo `startsiden/vibecode-template`. If you're reading it from inside a cloned copy with the journalist's project name, **skip to Step 1**.
+This file was likely **dropped into your context via Slack or a paste**. The journalist almost certainly does not yet have a cloned project on disk. Your first job is to fix that.
 
-### If the working directory is empty or unrelated
+### How you'll know which scenario you're in
 
-The journalist has nothing yet. Clone the template:
+| Signal                                                          | You're in…                                |
+|-----------------------------------------------------------------|-------------------------------------------|
+| `ls` shows `src/`, `package.json`, `astro.config.mjs` already   | Already-cloned project → skip to Step 1   |
+| `ls` is empty, or only your `AGENTS.md` paste sits in cwd       | Fresh start → run the full bootstrap below |
+
+### 0.1 — Gather inputs from the journalist
+
+Ask, **in plain language**, in one message:
+
+> "Three things before I start:
+> 1. **What should we call your project?** (lowercase, dashes, no spaces — e.g. `market-tracker`)
+> 2. **What's the GitHub repo URL** the team gave you for this project? (looks like `https://github.com/<org>/<repo>.git`)
+> 3. **What's the access token (PAT)?** It starts with `ghp_…` or `github_pat_…`. Paste it once and I'll store it locally — I won't echo it back."
+
+If they don't have the repo URL or PAT yet, tell them to go ask whoever sent them this file. Don't proceed without both — they're needed for the first "save".
+
+The template clone itself does **not** need the PAT — `startsiden/vibecode-template` is public. The PAT is for the journalist's own project repo, where saves go.
+
+### 0.2 — Clone the canonical template
 
 ```bash
-git clone https://github.com/startsiden/vibecode-template.git my-app
-cd my-app
+git clone https://github.com/startsiden/vibecode-template.git <project-name>
+cd <project-name>
 ```
 
-Replace `my-app` with whatever the journalist wants to call their project — lowercase, dashes, no spaces (`market-tracker`, `bedrift-rangering`, not `My App`).
+Use the name the journalist gave you in 0.1.
 
-### One-time detachment (do this immediately after clone)
+### 0.3 — Detach from the template repo
 
-The freshly-cloned repo still has `origin` pointed at the template. If you `git push` now you'll push to the template repo, which you don't have permission to do, and even if you did you'd corrupt it for everyone.
+The freshly-cloned repo still has `origin` pointed at `startsiden/vibecode-template`. Anything pushed would either be rejected (no permission) or — worse — corrupt the template for every other journalist. Repoint immediately:
 
 ```bash
-# Untether from the template repo
 git remote remove origin
-
-# Rename the project in package.json
-# Use the same name the journalist chose for their folder.
-# (Edit package.json directly — "name" field at the top.)
+git remote add origin "<journalist's repo URL from 0.1>"
 ```
 
-The actual project remote (`origin`) gets configured later by `skills/save.md` once the journalist has been given a repo URL + PAT.
+### 0.4 — Store the PAT locally, never in code
 
-### Strip the template's own marketing
+```bash
+cp .env.example .env
+```
 
-- Replace `README.md` with a one-sentence description of the journalist's project. They'll add more over time.
-- Edit `src/pages/index.astro` — change the title + copy so it reads as their app, not the template's hello-world.
-- Leave `AGENTS.md`, `skills/`, `src/lib/zephr.ts`, `src/middleware.ts`, `src/styles/globals.css`, `Dockerfile`, and `deploy/okd/` **untouched** for now. You'll edit them only when a skill recipe says so.
+Then open `.env` and fill:
+
+```
+GIT_REMOTE=https://<USERNAME>:<PAT>@github.com/<org>/<repo>.git
+GITHUB_PAT=<PAT>
+SIMULATE_ZEPHR=true
+```
+
+⚠️ **Never** paste the PAT back into chat, log it, `cat` it, or include it in a commit message. `.env` is already gitignored. If you forget which field is which, re-read `.env.example` — never the live `.env`.
+
+### 0.5 — Personalize the project surface
+
+- Edit `package.json` — change `"name"` to match the project name from 0.1.
+- Replace `README.md` with one sentence describing what this app is for. The journalist will add detail later.
+- Edit `src/pages/index.astro` — change the title and copy so it reads as their app, not "Finansavisen Vibe Starter".
+
+Leave everything else untouched. Only edit other files when a `skills/*.md` recipe explicitly says so.
+
+### 0.6 — Set git identity for this repo
+
+```bash
+git config user.name "<journalist's name>"
+git config user.email "<journalist's @finansavisen.no or @hegnar.no email>"
+```
+
+Use `--local` is implicit — never `--global`, never overwrite the journalist's machine-wide git identity.
+
+### 0.7 — First save (sanity check)
+
+Run the `save` skill — `skills/save.md` — to commit the bootstrap and push to their fresh repo. If the push succeeds you've proved PAT + remote are both correct before any real work happens.
 
 ### Step 1 — `skills/tools-init.md`
 
-Now run the tools-init skill to verify Node + pnpm + git exist on the journalist's machine, install deps, and confirm `pnpm dev` boots. Don't skip this even if you "think" the tools are present — Windows journalists frequently have stale PATH state.
+Verify Node 22, pnpm 10, and git are installed; install dependencies; confirm `pnpm dev` boots and renders `http://localhost:3000`. Don't skip — Windows journalists frequently have stale PATH state after a fresh Node install.
 
 ---
 
