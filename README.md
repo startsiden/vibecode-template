@@ -11,14 +11,21 @@ The starter is **agent-first**: the canonical instructions live in [`AGENTS.md`]
 - **Zephr-aware** — emits `<!-- ZEPHR_FEATURE … -->` markers; local simulation downloads the real components in dev
 - **Docker** multi-stage build, deploys to OKD via Profico DevOps
 
-## Quick start (for the journalist)
+## Start a new project from this template
 
 ```bash
-# One-time setup — let the agent walk you through it
+git clone https://github.com/startsiden/vibecode-template.git my-app
+cd my-app
+```
+
+Then open your editor with a coding assistant attached (Claude Code, Cursor, Codex, etc.) and say *"let's start"*. The assistant reads [`AGENTS.md`](./AGENTS.md), runs [`skills/tools-init.md`](./skills/tools-init.md) to verify Node + pnpm + git, and gets you running.
+
+## Quick start (manual, for the developer who already knows the stack)
+
+```bash
 pnpm install
 cp .env.example .env
 
-# Edit your project
 pnpm dev
 # → open http://localhost:3000
 ```

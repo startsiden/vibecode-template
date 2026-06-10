@@ -19,6 +19,48 @@ You are NOT building a SPA. You are NOT shipping a React app. Reach for islands 
 
 ---
 
+## Step 0 — Bootstrap
+
+This file ships at the root of the canonical template repo `startsiden/vibecode-template`. If you're reading it from inside a cloned copy with the journalist's project name, **skip to Step 1**.
+
+### If the working directory is empty or unrelated
+
+The journalist has nothing yet. Clone the template:
+
+```bash
+git clone https://github.com/startsiden/vibecode-template.git my-app
+cd my-app
+```
+
+Replace `my-app` with whatever the journalist wants to call their project — lowercase, dashes, no spaces (`market-tracker`, `bedrift-rangering`, not `My App`).
+
+### One-time detachment (do this immediately after clone)
+
+The freshly-cloned repo still has `origin` pointed at the template. If you `git push` now you'll push to the template repo, which you don't have permission to do, and even if you did you'd corrupt it for everyone.
+
+```bash
+# Untether from the template repo
+git remote remove origin
+
+# Rename the project in package.json
+# Use the same name the journalist chose for their folder.
+# (Edit package.json directly — "name" field at the top.)
+```
+
+The actual project remote (`origin`) gets configured later by `skills/save.md` once the journalist has been given a repo URL + PAT.
+
+### Strip the template's own marketing
+
+- Replace `README.md` with a one-sentence description of the journalist's project. They'll add more over time.
+- Edit `src/pages/index.astro` — change the title + copy so it reads as their app, not the template's hello-world.
+- Leave `AGENTS.md`, `skills/`, `src/lib/zephr.ts`, `src/middleware.ts`, `src/styles/globals.css`, `Dockerfile`, and `deploy/okd/` **untouched** for now. You'll edit them only when a skill recipe says so.
+
+### Step 1 — `skills/tools-init.md`
+
+Now run the tools-init skill to verify Node + pnpm + git exist on the journalist's machine, install deps, and confirm `pnpm dev` boots. Don't skip this even if you "think" the tools are present — Windows journalists frequently have stale PATH state.
+
+---
+
 ## Stack — Locked
 
 | Layer        | Choice                                         | Why                                                  |
