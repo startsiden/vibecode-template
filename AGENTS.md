@@ -108,7 +108,7 @@ Verify Node 22, pnpm 10, and git are installed; install dependencies; confirm `p
 
 | Layer        | Choice                                         | Why                                                  |
 |--------------|------------------------------------------------|------------------------------------------------------|
-| Framework    | **Astro 5**, `output: 'server'`                | Eliminates the React/Zephr hydration conflict        |
+| Framework    | **Astro 7**, `output: 'server'`                | Eliminates the React/Zephr hydration conflict        |
 | Adapter      | **`@astrojs/node`** (standalone)               | Matches Profico OKD deploy pattern                   |
 | Styling      | **Tailwind 4** via `@tailwindcss/vite`         | CSS-config, no JS config drift                       |
 | Type         | TypeScript everywhere (`.astro` + `.ts`)       | Catches mistakes the journalist can't                |
