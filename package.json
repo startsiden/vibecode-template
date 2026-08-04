@@ -8,19 +8,18 @@
     "build": "astro build",
     "start": "node ./dist/server/entry.mjs",
     "preview": "astro preview",
-    "check": "astro check"
+    "check": "tsc"
   },
   "dependencies": {
-    "@astrojs/node": "^11.0.2",
-    "@fontsource-variable/inter": "^5.2.0",
-    "@tailwindcss/vite": "^4.3.2",
-    "astro": "^7.0.6",
-    "tailwindcss": "^4.3.2"
+    "@astrojs/node": "^11.0.3",
+    "@fontsource-variable/inter": "^5.3.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "astro": "^7.1.6",
+    "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
-    "@astrojs/check": "0.9.9",
     "@types/node": "^22.20.1",
-    "typescript": "7.0.1-rc"
+    "typescript": "7.0.2"
   },
-  "packageManager": "pnpm@10.34.3"
+  "packageManager": "pnpm@10.34.5"
 }
