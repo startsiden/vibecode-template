@@ -12,7 +12,7 @@
  */
 
 const ZEPHR_URL =
-  process.env.ZEPHR_COMPONENTS_URL ??
+  import.meta.env.ZEPHR_COMPONENTS_URL ??
   'https://prod-zephr-components.finansavisen.no';
 
 const FEATURE_TO_COMPONENT: Record<string, string> = {
@@ -101,5 +101,5 @@ export async function simulateZephr(html: string): Promise<string> {
 }
 
 export function isZephrSimulationEnabled(): boolean {
-  return process.env.SIMULATE_ZEPHR === 'true';
+  return import.meta.env.SIMULATE_ZEPHR === 'true';
 }
