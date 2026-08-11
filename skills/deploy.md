@@ -1,109 +1,111 @@
-# skills/deploy.md — Going live on OKD
+# skills/deploy.md — Going live on the FA app platform
 
-**When to load**: journalist says "deploy", "publish", "go live", "put it online", "release".
+**When to load**: journalist says "deploy", "publish", "go live", "put it online", "release", "share it with the team".
 
-**Goal**: hand a working build off to Profico DevOps for the OKD cluster. The journalist does not deploy — DevOps does. Your job is to make the handoff bulletproof.
+**Goal**: get their app onto the FA app platform at `<app-name>.apps.journalistboost.ai`, where colleagues can find it in the app catalogue.
+
+**How it works in one sentence**: the platform watches their GitHub repo, and every save rebuilds and redeploys the app automatically.
 
 ---
 
-## Pre-flight (do this first)
+## Pre-flight — do all of this before deploying
 
-1. **Save everything** — see `skills/save.md`. The deploy pulls from the git remote, so anything not pushed will be missing.
+Deploys take a few minutes. Local checks take seconds. Never skip these to "just try it live".
 
-2. **Build locally** to confirm nothing's broken:
+1. **Save everything** — `skills/save.md`. The platform builds from GitHub, so anything unpushed does not exist as far as the deploy is concerned.
+
+2. **Build locally**:
    ```bash
    pnpm install
-   pnpm exec astro check
    pnpm build
    ```
-   All three must pass with zero errors. Warnings are OK.
+   Must pass with zero errors. Warnings are fine.
 
 3. **Smoke-test the production build**:
    ```bash
    PORT=3000 pnpm start
    ```
-   Open `http://localhost:3000`. Click around. The Zephr header WILL be missing here — that's fine, the simulation only runs in dev. Everything else should look correct.
+   Open `http://localhost:3000` and click through every page. The Finansavisen header will be missing here — that's expected, the simulation only runs in `pnpm dev`.
 
-4. **Build the Docker image locally** before sending to DevOps:
+4. **Build the Docker image** — this is the step that catches real deploy failures:
    ```bash
-   docker build -t fa-vibe-starter:local .
-   docker run --rm -p 3000:3000 fa-vibe-starter:local
+   docker build -t <app-name>:local .
+   docker run --rm -p 3000:3000 -e DATABASE_URL=... <app-name>:local
    ```
-   Same smoke test inside the container. Catching a broken Dockerfile here saves a deploy round trip.
+   Same click-through inside the container. A broken Dockerfile found here costs seconds; found on the platform it costs a full deploy cycle plus confusion.
 
-   Why: Coolify-style "push and pray" deploys are ~3 min round-trip each. Local Docker builds catch the same errors in seconds. (Same lesson as our mini-apps work — `pnpm dev` is not a replacement for `docker build .`.)
-
----
-
-## What the DevOps ticket needs
-
-Open a ticket for Profico DevOps with:
-
-| Field          | Value                                               |
-|----------------|-----------------------------------------------------|
-| Project name   | Same as `name` in `package.json`                    |
-| Git repo URL   | The HTTPS URL of the journalist's GitHub repo       |
-| Default branch | Usually `main`                                      |
-| Image name     | Suggest `<project-name>` in the FA registry         |
-| Container port | `3000`                                              |
-| Health path    | `/` (200 OK on the homepage is good enough)         |
-| Public URL     | What URL should it live at? (e.g. `<name>.finansavisen.no`) |
-| Env vars       | Anything from `.env.example` the journalist needs in prod. **Do not include `SIMULATE_ZEPHR` in prod** — Zephr CDN does the real injection. |
-| Behind Zephr?  | Yes if they enabled the FA header. No otherwise.    |
-| Resource hints | 256 MB RAM, 0.1 CPU is plenty for a starter app     |
-
-The `deploy/okd/` folder in this repo contains stub manifests (Deployment + Service + Route). DevOps may use them as a starting point or replace with their own template — both fine, just attach them to the ticket.
+If any step fails, fix it before continuing. Do not deploy a red build hoping the platform is more forgiving. It isn't.
 
 ---
 
-## Production env vars
+## First deploy — one-time setup
 
-In production:
+The app has to be registered on the platform before it can deploy. **You cannot do this yourself** — the platform owner does it. Ask them for:
 
-| Var                    | Value                                              |
-|------------------------|----------------------------------------------------|
-| `NODE_ENV`             | `production`                                       |
-| `PORT`                 | `3000`                                             |
-| `HOST`                 | `0.0.0.0` (Astro Node adapter)                     |
-| `SIMULATE_ZEPHR`       | **unset** or `false` — Zephr CDN handles it        |
-| `ZEPHR_COMPONENTS_URL` | **unset** — only used by the local sim             |
-| `PUBLIC_*`             | Anything the app reads from `import.meta.env.PUBLIC_*` |
-| `GITHUB_PAT`, `GIT_REMOTE` | **never** in prod — those are only for local saves |
+| What | Value |
+|---|---|
+| App name | `name` from `package.json` — becomes the URL |
+| GitHub repo | The journalist's repo (the platform reads it via the org GitHub App — no keys to paste) |
+| Branch | Usually `main` |
+| Port | `3000` |
+| Health check | `/` |
+| Database? | Yes/no — see `skills/add-database.md`. If yes, they provision a Postgres database and inject `DATABASE_URL` |
+| Env vars | Everything from `.env.example` that isn't a placeholder, **with real values sent privately — never in a ticket, never in chat, never in the repo** |
 
-Make this list explicit in the ticket so DevOps doesn't have to guess.
+Tell the journalist plainly: *"Someone on the platform team has to switch your app on the first time. After that, every save publishes automatically."*
 
 ---
 
-## If the app needs the FA header in production
+## Environment variables in production
 
-Tell DevOps in the ticket: **"this app sits behind Zephr at `<URL>` — please confirm with Hegnar that the Zephr feature `finansavisen-header` is enabled for this hostname."**
+| Var | Value |
+|---|---|
+| `NODE_ENV` | `production` |
+| `PORT` | `3000` |
+| `HOST` | `0.0.0.0` (required by the Astro Node adapter) |
+| `SIMULATE_ZEPHR` | **unset** — dev-only |
+| `ZEPHR_COMPONENTS_URL` | **unset** — dev-only |
+| `DATABASE_URL` | Set by the platform, if the app uses a database |
+| `GITHUB_PAT`, `GIT_REMOTE` | **never in production** — those exist only for local saves |
 
-If they forget, the journalist will see bare comments where the header should be — same failure mode as having `SIMULATE_ZEPHR=false` locally.
+Anything the browser needs must be prefixed `PUBLIC_`. Anything *not* prefixed stays server-side — that's the difference between a secret and a published secret.
+
+---
+
+## Login — you don't deploy anything for this
+
+The platform puts every app behind the JournalistBoost login before the request reaches your container. There's nothing to configure, no env var, no library, no callback URL.
+
+Do not add a login page "just in case". See the "Who's logged in" section of `AGENTS.md`.
 
 ---
 
 ## After deploy
 
-1. Visit the live URL. Confirm everything renders.
-2. View page source → search for `ZEPHR_FEATURE`. If you see the bare comments in prod, Zephr isn't in the path — flag to DevOps + Hegnar.
-3. Tell the journalist in plain English where their app is now: *"Your app is live at <URL>. Anyone with that link can see it."*
+1. Open `https://<app-name>.apps.journalistboost.ai` and click through everything.
+2. Confirm you were asked to log in if you weren't already — that proves the gate is in front of the app.
+3. If the app uses a database: add something, then **redeploy and check it's still there**. That's the test that catches a missing volume or an unprovisioned database, and it's much cheaper to find now than after a journalist has entered a week of data.
+4. Tell the journalist in their words: *"Your app is live at <URL>. Anyone at Finansavisen who's logged into JournalistBoost can use it. Every time you save, your changes go live in a few minutes."*
 
 ---
 
-## Updating after first deploy
+## Updating after the first deploy
 
 1. Edit the code.
 2. `skills/save.md`.
-3. DevOps' OKD pipeline picks up the push automatically (typically on the default branch). If they have a manual trigger, ping them.
-4. Refresh the live URL after 2–5 min.
+3. The platform rebuilds automatically.
+4. Refresh after ~2–5 minutes.
 
-Tell the journalist: *"Every time you save, your changes go live within a few minutes. Refresh the page to see them."*
+If a deploy doesn't appear, the build probably failed. Ask the platform owner to check the build log — don't guess, and don't start changing code at random.
 
 ---
 
 ## Hard don'ts
 
-- ❌ Don't propose Coolify, Vercel, Netlify, Cloudflare Pages, or any other host. Deployment target is OKD via Profico.
-- ❌ Don't paste the journalist's PAT or production secrets into the ticket — DevOps has its own secret store.
-- ❌ Don't try to `kubectl apply` yourself unless the journalist explicitly says they have cluster access. They don't.
-- ❌ Don't commit a `.env.production` with real values. The OKD secret store holds those.
+- ❌ Don't propose Vercel, Netlify, Cloudflare Pages, Heroku, Render, or a personal server. The target is the FA app platform.
+- ❌ Don't hand-write Kubernetes/OKD manifests. FA's newsroom sites run on OKD; apps from this template do not.
+- ❌ Don't put real secrets in `.env.example`, in the repo, in a commit message, or in a ticket. Placeholders only — a real key committed once is a key that must be rotated.
+- ❌ Don't commit `.env`.
+- ❌ Don't use SQLite or write data files to disk. The container's filesystem is discarded on every deploy. See `skills/add-database.md`.
+- ❌ Don't change the container port away from `3000`.
+- ❌ Don't deploy on the journalist's behalf if the local Docker build is failing.

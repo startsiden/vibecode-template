@@ -9,7 +9,7 @@ The starter is **agent-first**: the canonical instructions live in [`AGENTS.md`]
 - **Astro 5** server-rendered (Node adapter, port 3000)
 - **Tailwind 4** with the Finansavisen palette + Inter
 - **Zephr-aware** — emits `<!-- ZEPHR_FEATURE … -->` markers; local simulation downloads the real components in dev
-- **Docker** multi-stage build, deploys to OKD via Profico DevOps
+- **Docker** multi-stage build, deploys to the FA app platform (`*.apps.journalistboost.ai`)
 
 ## Start a new project from this template
 
@@ -54,5 +54,5 @@ Then talk to the agent:
 
 - Edit `src/styles/globals.css` to change brand tokens.
 - Extend `src/lib/zephr.ts` to register new Zephr feature IDs.
-- Adjust `Dockerfile` + `deploy/okd/` if the deploy target changes.
+- Adjust the `Dockerfile` if the deploy target changes.
 - The middleware is dev-only (gated by `SIMULATE_ZEPHR`); in production Zephr handles injection at the edge.

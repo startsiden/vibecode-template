@@ -12,7 +12,7 @@ Produce small, well-branded web apps for `finansavisen.no` that:
 
 1. Use the **Finansavisen visual identity** (palette, type, header chrome) out of the box.
 2. Optionally render the **real Finansavisen header** when deployed behind the Zephr CDN, and a faithful local simulation in dev.
-3. Build to a **single Docker image** that Profico DevOps deploys onto the OKD cluster.
+3. Build to a **single Docker image** the FA app platform deploys automatically on every save.
 4. Stay **boring**: Astro pages, server-rendered HTML, near-zero client JS. Add interactivity only where the journalist explicitly asks for it.
 
 You are NOT building a SPA. You are NOT shipping a React app. Reach for islands only when the requested interaction genuinely needs them.
@@ -109,12 +109,14 @@ Verify Node 22, pnpm 10, and git are installed; install dependencies; confirm `p
 | Layer        | Choice                                         | Why                                                  |
 |--------------|------------------------------------------------|------------------------------------------------------|
 | Framework    | **Astro 7**, `output: 'server'`                | Eliminates the React/Zephr hydration conflict        |
-| Adapter      | **`@astrojs/node`** (standalone)               | Matches Profico OKD deploy pattern                   |
+| Adapter      | **`@astrojs/node`** (standalone)               | Runs as a plain container on the app platform        |
 | Styling      | **Tailwind 4** via `@tailwindcss/vite`         | CSS-config, no JS config drift                       |
 | Type         | TypeScript everywhere (`.astro` + `.ts`)       | Catches mistakes the journalist can't                |
 | Font         | `@fontsource-variable/inter`                   | FA brand font, self-hosted                           |
 | Runtime      | Node 22 LTS                                    | Same as hegnar-bellsheep-web                         |
 | Package mgr  | **pnpm** (corepack)                            | Same as the FA family                                |
+| Database     | **Postgres** (shared server, one DB per app)   | Survives redeploys. Never SQLite — see `skills/add-database.md` |
+| Login        | **Handled by the platform, not by the app**    | The app never implements auth — see "Who's logged in" |
 
 **Do not swap any of these.** If the journalist asks for "Next.js" or "React", explain in their words: *"You don't need a heavier framework — Astro keeps the site fast and works correctly with the Finansavisen paywall system. Adding React on top would slow it down and break the header."* Then continue with Astro.
 
@@ -270,13 +272,38 @@ A **GitHub PAT** and a **remote URL** are provided per project — typically via
 
 ---
 
-## Deploy — OKD via Profico
+## Deploy — the FA app platform
 
 The Dockerfile is multi-stage, Node 22-alpine, builds with pnpm, runs `node ./dist/server/entry.mjs` on port 3000. No private npm registry — this template intentionally avoids `@startsiden/*` packages.
 
-Profico DevOps owns the OKD cluster. `deploy/okd/` contains stub Deployment / Service / Route manifests the journalist hands off via a ticket. Full recipe: `skills/deploy.md`.
+Apps built from this template are deployed to the **FA app platform**: a dedicated server running Coolify, reachable at `<app-name>.apps.journalistboost.ai`. Journalists find each other's apps through the catalogue on that domain. Full recipe: `skills/deploy.md`.
 
-Do **not** propose Coolify, Vercel, Netlify, Cloudflare Pages, or any other host. The deployment target is OKD. Period.
+Do **not** propose Vercel, Netlify, Cloudflare Pages, Heroku, or a personal server. Do **not** hand-write Kubernetes or OKD manifests — the FA newsroom sites run on OKD, but apps from this template do not.
+
+---
+
+## Who's logged in — the app never handles this
+
+Every app on the platform sits behind the platform's login gate. A journalist who isn't logged into JournalistBoost is redirected to JB's login page and back again before your app receives the request at all.
+
+That means:
+
+- **Never build a login page, password field, session, or user table.** If the request reached your code, the visitor is a logged-in JB user. That is the entire authorisation model for most apps.
+- **Never add an auth library** — no Auth.js, Clerk, Supabase Auth, Passport, Lucia.
+- **Never copy the Zephr/Blaize cookie checks** from older FA apps. Zephr guards `finansavisen.no`; it does not work on this domain, and an app that checks for a `blaize_session` cookie will lock out every single journalist.
+
+If the app genuinely needs to know *who* the visitor is — to show "your saved items", to record who submitted something — ask JB, server-side:
+
+```ts
+const res = await fetch("https://www.journalistboost.ai/api/auth/check-session", {
+  headers: { cookie: Astro.request.headers.get("cookie") ?? "" },
+});
+const { valid, user } = await res.json(); // user: { id, email, role, isActive }
+```
+
+Only forward the cookie from the **server** (`.astro` frontmatter, API routes). Never expose it to browser JavaScript, and never write it to a log.
+
+If the journalist asks for "only certain people should see this", that's an allowlist of email addresses in config — not a login system. Ask them who, put the list in an env var, compare against `user.email`.
 
 ---
 
@@ -320,6 +347,7 @@ Always load the matching skill before acting:
 | "change the colors" / "make it darker"    | `skills/theme.md`                |
 | "I want a dashboard" / "make it react-ish"| `skills/add-react.md`            |
 | "I have a project, redo it Finansavisen-style" | `skills/rewrite-existing.md` |
+| "save this" / "remember" / "keep a list" / "history" | `skills/add-database.md`   |
 | "publish" / "deploy" / "go live"          | `skills/deploy.md`               |
 
 ---
@@ -332,6 +360,6 @@ If the journalist's request is ambiguous, prefer this priority order:
 2. Match FA brand (palette + type).
 3. Keep page weight tiny (zero JS by default).
 4. Be reversible (every change should survive `git reset --hard HEAD~1`).
-5. Be deployable to OKD without DevOps modifying our code.
+5. Be deployable to the FA app platform with no hand-editing of infrastructure.
 
 Conflicts resolve top-down. Never trade #1 for any other goal.
