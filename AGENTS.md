@@ -19,90 +19,23 @@ You are NOT building a SPA. You are NOT shipping a React app. Reach for islands 
 
 ---
 
-## Step 0 — Bootstrap
+## Before you start
 
-This file was likely **dropped into your context via Slack or a paste**. The journalist almost certainly does not yet have a cloned project on disk. Your first job is to fix that.
-
-### How you'll know which scenario you're in
-
-| Signal                                                          | You're in…                                |
-|-----------------------------------------------------------------|-------------------------------------------|
-| `ls` shows `src/`, `package.json`, `astro.config.mjs` already   | Already-cloned project → skip to Step 1   |
-| `ls` is empty, or only your `AGENTS.md` paste sits in cwd       | Fresh start → run the full bootstrap below |
-
-### 0.1 — Gather inputs from the journalist
-
-Ask, **in plain language**, in one message:
-
-> "Three things before I start:
-> 1. **What should we call your project?** (lowercase, dashes, no spaces — e.g. `market-tracker`)
-> 2. **What's the GitHub repo URL** the team gave you for this project? (looks like `https://github.com/<org>/<repo>.git`)
-> 3. **What's the access token (PAT)?** It starts with `ghp_…` or `github_pat_…`. Paste it once and I'll store it locally — I won't echo it back."
-
-If they don't have the repo URL or PAT yet, tell them to go ask whoever sent them this file. Don't proceed without both — they're needed for the first "save".
-
-The template clone itself does **not** need the PAT — `startsiden/vibecode-template` is public. The PAT is for the journalist's own project repo, where saves go.
-
-### 0.2 — Clone the canonical template
-
-```bash
-git clone https://github.com/startsiden/vibecode-template.git <project-name>
-cd <project-name>
-```
-
-Use the name the journalist gave you in 0.1.
-
-### 0.3 — Detach from the template repo
-
-The freshly-cloned repo still has `origin` pointed at `startsiden/vibecode-template`. Anything pushed would either be rejected (no permission) or — worse — corrupt the template for every other journalist. Repoint immediately:
-
-```bash
-git remote remove origin
-git remote add origin "<journalist's repo URL from 0.1>"
-```
-
-### 0.4 — Store the PAT locally, never in code
-
-```bash
-cp .env.example .env
-```
-
-Then open `.env` and fill:
+This project is created and bootstrapped by the **fa-vibe plugin**:
 
 ```
-GIT_REMOTE=https://<USERNAME>:<PAT>@github.com/<org>/<repo>.git
-GITHUB_PAT=<PAT>
-SIMULATE_ZEPHR=true
+/plugin marketplace add startsiden/fa-vibe-plugin
+/plugin install fa-vibe@fa-vibe
+/fa-vibe:new-project
 ```
 
-⚠️ **Never** paste the PAT back into chat, log it, `cat` it, or include it in a commit message. `.env` is already gitignored. If you forget which field is which, re-read `.env.example` — never the live `.env`.
+If you're reading this inside an already-cloned project, bootstrap is done —
+run `skills/tools-init.md` and get on with the work.
 
-### 0.5 — Personalize the project surface
-
-- Edit `package.json` — change `"name"` to match the project name from 0.1.
-- Replace `README.md` with one sentence describing what this app is for. The journalist will add detail later.
-- Edit `src/pages/index.astro` — change the title and copy so it reads as their app, not "Finansavisen Vibe Starter".
-
-Leave everything else untouched. Only edit other files when a `skills/*.md` recipe explicitly says so.
-
-### 0.6 — Set git identity for this repo
-
-```bash
-git config user.name "<journalist's name>"
-git config user.email "<journalist's @finansavisen.no or @hegnar.no email>"
-```
-
-Use `--local` is implicit — never `--global`, never overwrite the journalist's machine-wide git identity.
-
-### 0.7 — First save (sanity check)
-
-Run the `save` skill — `skills/save.md` — to commit the bootstrap and push to their fresh repo. If the push succeeds you've proved PAT + remote are both correct before any real work happens.
-
-### Step 1 — `skills/tools-init.md`
-
-Verify Node 22, pnpm 10, and git are installed; install dependencies; confirm `pnpm dev` boots and renders `http://localhost:3000`. Don't skip — Windows journalists frequently have stale PATH state after a fresh Node install.
-
----
+The plugin owns everything that is true for **any** Finansavisen app: starting a
+project, the save/publish vocabulary, login, databases, and going live. This
+file owns everything specific to **this stack** — Astro, the FA visual identity,
+the Zephr header, and the file layout below.
 
 ## Stack — Locked
 
@@ -259,53 +192,27 @@ For pages that are mostly interactive React, keep them as one Astro page with a 
 
 ## GitHub — "Save" Vocabulary
 
-Journalists don't speak git. Map their words to git commands and **always use the `skills/save.md` recipe** instead of running git directly.
+Journalists don't speak git: "save" means commit + push, "publish" means go
+live. Full table in the plugin's `working-with-journalists` skill; the recipe is
+`skills/save.md`.
 
-| They say              | You do                                         |
-|-----------------------|------------------------------------------------|
-| "save"                | `git add -A && git commit && git push`         |
-| "publish" / "deploy"  | Save first, then `skills/deploy.md`            |
-| "undo"                | Confirm scope first, then `git reset`/`revert` |
-| "what changed?"       | `git status` + `git diff --stat`               |
+## Deploy
 
-A **GitHub PAT** and a **remote URL** are provided per project — typically via env or a `.env.local` line: `GITHUB_PAT=ghp_…` and `GIT_REMOTE=https://…@github.com/<org>/<repo>.git`. Configure the remote once with `git remote add origin "$GIT_REMOTE"` and **never log the PAT**. See `skills/save.md`.
-
----
-
-## Deploy — the FA app platform
-
-The Dockerfile is multi-stage, Node 22-alpine, builds with pnpm, runs `node ./dist/server/entry.mjs` on port 3000. No private npm registry — this template intentionally avoids `@startsiden/*` packages.
-
-Apps built from this template are deployed to the **FA app platform**: a dedicated server running Coolify, reachable at `<app-name>.apps.journalistboost.ai`. Journalists find each other's apps through the catalogue on that domain. Full recipe: `skills/deploy.md`.
-
-Do **not** propose Vercel, Netlify, Cloudflare Pages, Heroku, or a personal server. Do **not** hand-write Kubernetes or OKD manifests — the FA newsroom sites run on OKD, but apps from this template do not.
-
----
+Container on port 3000, built from the Dockerfile. Where it goes depends on
+whether this is a JB app or an FA app — the plugin's `publish` skill routes it.
+Do not propose Vercel, Netlify, Cloudflare Pages or a personal server.
 
 ## Who's logged in — the app never handles this
 
-Every app on the platform sits behind the platform's login gate. A journalist who isn't logged into JournalistBoost is redirected to JB's login page and back again before your app receives the request at all.
+Apps on the platform sit behind the JournalistBoost login before a request ever
+reaches your code. **Never build a login page, user table, session or password
+field. Never add an auth library. Never copy Zephr / `blaize_session` checks
+from older FA apps** — that cookie does not exist on this domain and will lock
+out every journalist.
 
-That means:
-
-- **Never build a login page, password field, session, or user table.** If the request reached your code, the visitor is a logged-in JB user. That is the entire authorisation model for most apps.
-- **Never add an auth library** — no Auth.js, Clerk, Supabase Auth, Passport, Lucia.
-- **Never copy the Zephr/Blaize cookie checks** from older FA apps. Zephr guards `finansavisen.no`; it does not work on this domain, and an app that checks for a `blaize_session` cookie will lock out every single journalist.
-
-If the app genuinely needs to know *who* the visitor is — to show "your saved items", to record who submitted something — ask JB, server-side:
-
-```ts
-const res = await fetch("https://www.journalistboost.ai/api/auth/check-session", {
-  headers: { cookie: Astro.request.headers.get("cookie") ?? "" },
-});
-const { valid, user } = await res.json(); // user: { id, email, role, isActive }
-```
-
-Only forward the cookie from the **server** (`.astro` frontmatter, API routes). Never expose it to browser JavaScript, and never write it to a log.
-
-If the journalist asks for "only certain people should see this", that's an allowlist of email addresses in config — not a login system. Ask them who, put the list in an env var, compare against `user.email`.
-
----
+To find out *who* the visitor is, see the plugin's `working-with-journalists`
+skill. Short version: ask JB `/api/auth/check-session` server-side, forwarding
+the request's cookie. Never expose that cookie to browser JavaScript.
 
 ## Quality Gates Before You Claim "Done"
 
@@ -336,7 +243,9 @@ If any of these fail, fix before reporting success.
 
 ## Skills Index
 
-Always load the matching skill before acting:
+Always load the matching skill before acting.
+
+**This template's skills** (`skills/`) — everything specific to this stack:
 
 | When the journalist says…                 | Load skill                       |
 |-------------------------------------------|----------------------------------|
@@ -347,10 +256,18 @@ Always load the matching skill before acting:
 | "change the colors" / "make it darker"    | `skills/theme.md`                |
 | "I want a dashboard" / "make it react-ish"| `skills/add-react.md`            |
 | "I have a project, redo it Finansavisen-style" | `skills/rewrite-existing.md` |
-| "save this" / "remember" / "keep a list" / "history" | `skills/add-database.md`   |
-| "publish" / "deploy" / "go live"          | `skills/deploy.md`               |
 
----
+**Plugin skills** (`fa-vibe`) — everything true for any Finansavisen app:
+
+| When the journalist says…                 | Skill                            |
+|-------------------------------------------|----------------------------------|
+| "save this" / "remember" / "keep a list"  | `fa-vibe:add-database`           |
+| "publish" / "deploy" / "go live"          | `fa-vibe:publish`                |
+| anything about how we work here           | `fa-vibe:working-with-journalists` |
+
+If the plugin isn't installed, install it — see "Before you start". Don't
+reimplement its skills here.
+
 
 ## Reference Tabletop
 

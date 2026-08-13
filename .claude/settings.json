@@ -1,0 +1,8 @@
+{
+  "extraKnownMarketplaces": {
+    "fa-vibe": {
+      "source": { "source": "github", "repo": "startsiden/fa-vibe-plugin" }
+    }
+  },
+  "enabledPlugins": { "fa-vibe@fa-vibe": true }
+}
