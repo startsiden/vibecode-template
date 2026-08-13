@@ -1,15 +1,21 @@
 import { defineMiddleware, sequence } from 'astro:middleware';
-import { getJbUser, isAuthDisabled, jbLoginUrl } from './lib/auth';
+import { authMode, getJbUser, isAuthDisabled, jbLoginUrl } from './lib/auth';
 import { isZephrSimulationEnabled, simulateZephr } from './lib/zephr';
 
 /**
- * Login. Everyone reaching this app must be signed into JournalistBoost.
+ * Login, for JB apps only.
  *
- * Do not delete this unless the journalist explicitly wants the app readable
- * by anyone with the link. Do not replace it with your own login — see
- * AGENTS.md, "Who's logged in".
+ * AUTH_MODE=jb (default): everyone reaching this app must be signed into
+ * JournalistBoost, and this validates that.
+ *
+ * AUTH_MODE=zephr: this does nothing. FA apps on finansavisen.no are gated by
+ * Zephr at the CDN edge before the request arrives, and their readers have no
+ * JournalistBoost session — running the JB check would reject all of them.
+ *
+ * Don't replace either with your own login. See AGENTS.md, "Who's logged in".
  */
 const requireLogin = defineMiddleware(async (context, next) => {
+  if (authMode() === 'zephr') return next();
   if (isAuthDisabled()) return next();
 
   // Framework assets and the favicon carry nothing private, and gating them

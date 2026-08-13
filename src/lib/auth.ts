@@ -100,6 +100,23 @@ export function jbLoginUrl(returnTo: URL): string {
   return `${JB_URL}/login?from=${encodeURIComponent(url.toString())}`;
 }
 
+/**
+ * Which login this app sits behind. Set AUTH_MODE in the environment.
+ *
+ *  'jb'    — JournalistBoost. The app validates JB's shared session itself.
+ *            For JB apps on *.apps.journalistboost.ai. This is the default.
+ *  'zephr' — Zephr / the paywall, enforced at the CDN edge before the request
+ *            reaches this container. For FA apps served on finansavisen.no.
+ *            The app does NO login work: adding a JB check here would reject
+ *            every reader, since they have no JournalistBoost session.
+ *
+ * Getting this wrong locks out exactly the audience the app is for, so it is
+ * explicit rather than inferred.
+ */
+export function authMode(): "jb" | "zephr" {
+  return process.env.AUTH_MODE === "zephr" ? "zephr" : "jb";
+}
+
 /** Local development: set AUTH_DISABLED=1 in .env to skip the login check. */
 export function isAuthDisabled(): boolean {
   return process.env.AUTH_DISABLED === '1' || process.env.AUTH_DISABLED === 'true';

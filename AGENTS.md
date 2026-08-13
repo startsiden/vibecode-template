@@ -202,17 +202,36 @@ Container on port 3000, built from the Dockerfile. Where it goes depends on
 whether this is a JB app or an FA app — the plugin's `publish` skill routes it.
 Do not propose Vercel, Netlify, Cloudflare Pages or a personal server.
 
-## Who's logged in — the app never handles this
+## Who's logged in — depends on where the app lives
 
-Apps on the platform sit behind the JournalistBoost login before a request ever
-reaches your code. **Never build a login page, user table, session or password
-field. Never add an auth library. Never copy Zephr / `blaize_session` checks
-from older FA apps** — that cookie does not exist on this domain and will lock
-out every journalist.
+Two different models. Pick with `AUTH_MODE`, and pick correctly: the wrong one
+locks out exactly the audience the app is for.
 
-To find out *who* the visitor is, see the plugin's `working-with-journalists`
-skill. Short version: ask JB `/api/auth/check-session` server-side, forwarding
-the request's cookie. Never expose that cookie to browser JavaScript.
+| | JB app | FA app |
+|---|---|---|
+| `AUTH_MODE` | `jb` *(default)* | `zephr` |
+| Lives at | `<name>.apps.journalistboost.ai` | `finansavisen.no/<path>` |
+| Who gets in | Journalists signed into JournalistBoost | Readers, per the paywall |
+| Enforced by | This app, via `src/middleware.ts` | Zephr, at the CDN edge, before the request arrives |
+| App-level login code | Already written — don't touch it | **None.** The app does no login work |
+
+**AUTH_MODE=jb.** `src/middleware.ts` validates JB's shared session and
+redirects anyone without one. It's already there. Don't reimplement it.
+
+**AUTH_MODE=zephr.** The middleware stands down entirely. Readers have no
+JournalistBoost session, so running the JB check would reject every one of
+them. Gating happens at the edge; use `skills/add-zephr-header.md` for the
+Finansavisen chrome.
+
+In both cases: **never build a login page, user table, session or password
+field, and never add an auth library.** The platform handles it, in whichever
+of the two ways applies.
+
+To find out *who* the visitor is — JB apps only — see the plugin's
+`working-with-journalists` skill. Short version: ask JB
+`/api/auth/check-session` server-side, forwarding the request's cookie. Never
+expose that cookie to browser JavaScript. `Astro.locals.user` is populated for
+you, and is `undefined` under `AUTH_MODE=zephr`, so guard before using it.
 
 ## Quality Gates Before You Claim "Done"
 
