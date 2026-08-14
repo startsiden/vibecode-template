@@ -16,6 +16,11 @@ interface Props {
 }
 
 const { title, description, showFaChrome = false } = Astro.props;
+
+// Set by src/middleware.ts when AUTH_MODE=jb. Undefined for FA apps
+// (AUTH_MODE=zephr), where readers have no JournalistBoost session, and
+// locally with AUTH_DISABLED=1 — so the badge simply doesn't render.
+const user = Astro.locals.user;
 ---
 <!doctype html>
 <html lang="no">
@@ -26,6 +31,30 @@ const { title, description, showFaChrome = false } = Astro.props;
     {description && <meta name="description" content={description} />}
   </head>
   <body class="min-h-screen bg-white font-sans text-gray-900 antialiased">
+    {
+      user && (
+        <div class="fixed right-3 top-3 z-50 hidden items-center gap-2 sm:flex">
+          <div
+            class="inline-flex h-9 items-center gap-2 rounded-full border border-gray-200 bg-white px-3 text-xs text-gray-600 shadow-sm"
+            title={`Logget inn via JournalistBoost som ${user.email}`}
+          >
+            <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" aria-hidden="true" />
+            <span class="max-w-[14rem] truncate">{user.email}</span>
+          </div>
+          {/* Same-origin POST: /logout forwards to JB and relays its Set-Cookie
+              headers, so this works with JavaScript disabled. */}
+          <form method="POST" action="/logout">
+            <button
+              type="submit"
+              class="inline-flex h-9 items-center rounded-full border border-gray-200 bg-white px-3 text-xs text-gray-600 shadow-sm hover:bg-gray-50 hover:text-gray-900"
+              title="Logg ut av JournalistBoost"
+            >
+              Logg ut
+            </button>
+          </form>
+        </div>
+      )
+    }
     {showFaChrome && <FinansavisenHeader />}
     <main>
       <slot />

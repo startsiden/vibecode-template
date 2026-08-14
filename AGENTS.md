@@ -24,7 +24,7 @@ You are NOT building a SPA. You are NOT shipping a React app. Reach for islands 
 This project is created and bootstrapped by the **fa-vibe plugin**:
 
 ```
-/plugin marketplace add startsiden/fa-vibe-plugin
+/plugin marketplace add startsiden/hegnar-fa-vibe-plugin
 /plugin install fa-vibe@fa-vibe
 /fa-vibe:new-project
 ```
