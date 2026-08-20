@@ -79,7 +79,7 @@ Vue / Svelte / Solid get the same treatment with `@astrojs/vue` / `-svelte` / `-
 
 If their app talks to a backend, two paths:
 
-1. **The backend is theirs** → keep using it. Configure the URL via `PUBLIC_API_URL` env var (read in components as `import.meta.env.PUBLIC_API_URL`).
+1. **The backend is theirs** → keep using it. Configure the URL via an env var: declare it in the `env.schema` in `astro.config.mjs`, then import it from `astro:env/server` (or `astro:env/client` with a `PUBLIC_` name if the browser needs it).
 2. **The backend was Next.js API routes** → port to `src/pages/api/*.ts` (Astro supports API routes the same way) OR move to a separate small Node service. Ask the journalist.
 
 ---
@@ -107,7 +107,7 @@ If their app talks to a backend, two paths:
 ## After the port
 
 1. `pnpm dev` — walk the journalist through every page, side-by-side with their old version. Confirm content matches.
-2. `pnpm exec astro check` passes.
+2. `pnpm check` passes.
 3. `pnpm build` succeeds.
 4. Run `skills/theme.md` if they want brand tweaks.
 5. Save (`skills/save.md`).

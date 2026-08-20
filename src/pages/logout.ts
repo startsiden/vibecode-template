@@ -1,7 +1,6 @@
 import type { APIRoute } from 'astro';
+import { JB_URL } from 'astro:env/server';
 import { authMode } from '../lib/auth';
-
-const JB_URL = (process.env.JB_URL ?? 'https://www.journalistboost.ai').replace(/\/$/, '');
 
 /**
  * Log the journalist out of JournalistBoost, from inside this app.
@@ -20,12 +19,12 @@ export const POST: APIRoute = async ({ request }) => {
   if (authMode() === 'zephr') return new Response('Not found', { status: 404 });
 
   const headers = new Headers({
-    location: `${JB_URL}/login`,
+    location: new URL('/login', JB_URL).toString(),
     'cache-control': 'no-store',
   });
 
   try {
-    const res = await fetch(`${JB_URL}/api/auth/logout`, {
+    const res = await fetch(new URL('/api/auth/logout', JB_URL), {
       method: 'POST',
       headers: {
         cookie: request.headers.get('cookie') ?? '',

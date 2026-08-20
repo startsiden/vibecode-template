@@ -158,5 +158,5 @@ pnpm dev
 
 - Open the page, interact with the island, confirm it responds.
 - View page source → confirm the static parts of the page (and Zephr markers) are intact.
-- `pnpm exec astro check` should still pass.
+- `pnpm check` should still pass.
 - `pnpm build` should still succeed.

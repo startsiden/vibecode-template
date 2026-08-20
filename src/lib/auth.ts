@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { AUTH_CACHE_TTL_MS, AUTH_DISABLED, AUTH_MODE, JB_URL } from 'astro:env/server';
 
 /**
  * Login for apps on the FA app platform.
@@ -10,17 +11,13 @@ import { createHash } from 'node:crypto';
  * There is nothing to configure and no library to add. Do not build a login
  * page, a user table, or a password field. See AGENTS.md, "Who's logged in".
  *
- * NOTE: this file reads `process.env`, never `import.meta.env`. Vite replaces
- * `import.meta.env.X` with its value at BUILD time, so `AUTH_DISABLED=1` in a
- * developer's .env would be baked into the production image and the app would
- * ship with no login at all. `process.env` is read at runtime, which is what
- * a container needs.
+ * Every value here comes from `astro:env/server`, so it is read at runtime
+ * rather than compiled in. Defaults and validation live in the env schema in
+ * `astro.config.mjs`.
  */
 
-const JB_URL = (process.env.JB_URL ?? 'https://www.journalistboost.ai').replace(/\/$/, '');
-
-/** How long a confirmed session is trusted before re-asking JB. */
-const CACHE_TTL_MS = Number(process.env.AUTH_CACHE_TTL_MS ?? 60 * 60 * 1000);
+/** How long a confirmed session is trusted before re-asking JB. Default 1 hour. */
+const CACHE_TTL_MS = AUTH_CACHE_TTL_MS;
 
 export interface JbUser {
   id: number;
@@ -71,7 +68,9 @@ export async function getJbUser(cookieHeader: string | null): Promise<JbUser | n
   if (hit && Date.now() - hit.checkedAt < CACHE_TTL_MS) return hit.user;
 
   try {
-    const res = await fetch(`${JB_URL}/api/auth/check-session`, {
+    // `new URL` joins correctly whether or not JB_URL has a trailing slash,
+    // which is why nothing here normalises it by hand.
+    const res = await fetch(new URL('/api/auth/check-session', JB_URL), {
       headers: { cookie: `auth_token=${token}` },
       signal: AbortSignal.timeout(5000),
     });
@@ -97,7 +96,10 @@ export function jbLoginUrl(returnTo: URL): string {
   // through an extra redirect on the way back.
   const url = new URL(returnTo);
   if (url.hostname !== 'localhost' && url.hostname !== '127.0.0.1') url.protocol = 'https:';
-  return `${JB_URL}/login?from=${encodeURIComponent(url.toString())}`;
+
+  const login = new URL('/login', JB_URL);
+  login.searchParams.set('from', url.toString());
+  return login.toString();
 }
 
 /**
@@ -113,11 +115,15 @@ export function jbLoginUrl(returnTo: URL): string {
  * Getting this wrong locks out exactly the audience the app is for, so it is
  * explicit rather than inferred.
  */
-export function authMode(): "jb" | "zephr" {
-  return process.env.AUTH_MODE === "zephr" ? "zephr" : "jb";
+export function authMode(): 'jb' | 'zephr' {
+  return AUTH_MODE;
 }
 
-/** Local development: set AUTH_DISABLED=1 in .env to skip the login check. */
+/**
+ * Local development: set `AUTH_DISABLED=true` in .env to skip the login check.
+ * Only 'true' and 'false' parse — anything else is a hard error rather than
+ * being read as "not disabled".
+ */
 export function isAuthDisabled(): boolean {
-  return process.env.AUTH_DISABLED === '1' || process.env.AUTH_DISABLED === 'true';
+  return AUTH_DISABLED;
 }

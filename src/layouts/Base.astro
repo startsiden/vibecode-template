@@ -34,11 +34,11 @@ const user = Astro.locals.user;
     {
       user && (
         <div class="fixed right-3 top-3 z-50 hidden items-center gap-2 sm:flex">
-          <div
-            class="inline-flex h-9 items-center gap-2 rounded-full border border-gray-200 bg-white px-3 text-xs text-gray-600 shadow-sm"
-            title={`Logget inn via JournalistBoost som ${user.email}`}
-          >
-            <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" aria-hidden="true" />
+          <div class="inline-flex h-9 items-center gap-2 rounded-full border border-gray-200 bg-white px-3 text-xs text-gray-600 shadow-sm">
+            {/* Empty and decorative, so it is already inaccessible to a screen
+                reader — no aria-hidden needed. */}
+            <span class="size-1.5 shrink-0 rounded-full bg-emerald-500" />
+            <span class="sr-only">Logget inn via JournalistBoost som</span>
             <span class="max-w-[14rem] truncate">{user.email}</span>
           </div>
           {/* Same-origin POST: /logout forwards to JB and relays its Set-Cookie
@@ -47,9 +47,8 @@ const user = Astro.locals.user;
             <button
               type="submit"
               class="inline-flex h-9 items-center rounded-full border border-gray-200 bg-white px-3 text-xs text-gray-600 shadow-sm hover:bg-gray-50 hover:text-gray-900"
-              title="Logg ut av JournalistBoost"
             >
-              Logg ut
+              Logg ut<span class="sr-only"> av JournalistBoost</span>
             </button>
           </form>
         </div>

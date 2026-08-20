@@ -11,9 +11,9 @@
  * Only active when SIMULATE_ZEPHR=true. No-op otherwise.
  */
 
-const ZEPHR_URL =
-  import.meta.env.ZEPHR_COMPONENTS_URL ??
-  'https://prod-zephr-components.finansavisen.no';
+import { SIMULATE_ZEPHR, ZEPHR_COMPONENTS_URL } from 'astro:env/server';
+
+const ZEPHR_URL = ZEPHR_COMPONENTS_URL;
 
 const FEATURE_TO_COMPONENT: Record<string, string> = {
   'finansavisen-header': 'header',
@@ -101,5 +101,5 @@ export async function simulateZephr(html: string): Promise<string> {
 }
 
 export function isZephrSimulationEnabled(): boolean {
-  return import.meta.env.SIMULATE_ZEPHR === 'true';
+  return SIMULATE_ZEPHR;
 }

@@ -18,10 +18,25 @@ const requireLogin = defineMiddleware(async (context, next) => {
   if (authMode() === 'zephr') return next();
   if (isAuthDisabled()) return next();
 
-  // Framework assets and the favicon carry nothing private, and gating them
-  // would mean a JB round-trip per file instead of per page.
+  // Built assets and the favicon carry nothing private, and gating them would
+  // mean a JB round-trip per file instead of per page.
+  //
+  // An explicit allowlist, not a `/_` prefix or a list of file extensions.
+  // Both of those guess, and they guess in the dangerous direction: `/_` would
+  // also expose a future `_health` route, and any extension list will miss one
+  // eventually. Being too NARROW here costs a needless login check on some
+  // asset — visible and harmless. Being too broad serves something private to
+  // anyone who asks.
+  //
+  // `/_astro/` is pinned as `build.assets` in astro.config.mjs precisely so
+  // this cannot drift if Astro changes its default. Add a path here only after
+  // deciding it is safe to serve logged-out.
   const { pathname } = context.url;
-  if (pathname.startsWith('/_') || pathname.startsWith('/favicon')) return next();
+  const isPublicAsset =
+    pathname.startsWith('/_astro/') ||
+    pathname === '/favicon.ico' ||
+    pathname === '/favicon.svg';
+  if (isPublicAsset) return next();
 
   const user = await getJbUser(context.request.headers.get('cookie'));
 

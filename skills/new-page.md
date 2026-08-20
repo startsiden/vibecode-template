@@ -102,4 +102,4 @@ If the journalist says "this page is a dashboard / app", read `skills/add-react.
 pnpm dev
 ```
 
-Open `http://localhost:3000/<your-new-url>`. Tell the journalist to click around. If anything looks off, `pnpm exec astro check` will surface type errors.
+Open `http://localhost:3000/<your-new-url>`. Tell the journalist to click around. If anything looks off, `pnpm check` will surface type errors.

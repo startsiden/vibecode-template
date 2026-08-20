@@ -93,6 +93,24 @@ For full customization see `skills/theme.md`.
 
 ---
 
+## Environment variables
+
+Declare it, then import it. Never reach for `process.env` or `import.meta.env`.
+
+1. Add the variable to `env.schema` in `astro.config.mjs`, with its default.
+2. Import it: `import { MY_VAR } from 'astro:env/server'`.
+
+`import.meta.env.X` is replaced by Vite at **build** time, so a value from the
+machine that built the image is what ships — a local `AUTH_DISABLED` would be
+compiled in with no way to switch it back off. Server values must be read at
+runtime, which is what `astro:env/server` does.
+
+Values the browser needs are the exception: name them `PUBLIC_…` and declare
+them with `context: 'client', access: 'public'`.
+
+`.env.example` holds only what you may want to change locally. Defaults live in
+the schema, so there is one place to look.
+
 ## The Finansavisen Header (Zephr)
 
 The FA header / footer are served at the edge by **Zephr**. They appear in HTML as comment markers:
@@ -239,9 +257,14 @@ you, and is `undefined` under `AUTH_MODE=zephr`, so guard before using it.
 2. The page renders in the journalist's browser (you ask them to confirm).
 3. If they enabled the FA header, it appears with `SIMULATE_ZEPHR=true` in dev.
 4. `pnpm build` succeeds.
-5. `pnpm exec astro check` passes.
+5. `pnpm check` passes. (That is `tsc`. Do **not** run `astro check` — this
+   template is on TypeScript 7, which has no JS API, so `@astrojs/check` cannot
+   run and the command stops on an install prompt.)
 6. No hardcoded color hex values outside `src/styles/globals.css`.
-7. No hardcoded API URLs — read from `import.meta.env.PUBLIC_*` or `process.env.*`.
+7. No hardcoded API URLs. Every environment variable is declared in the `env.schema`
+   in `astro.config.mjs` and imported from `astro:env/server` — never read
+   `import.meta.env` for a server value, because Vite substitutes those at BUILD
+   time and the value gets frozen into the image.
 
 If any of these fail, fix before reporting success.
 
