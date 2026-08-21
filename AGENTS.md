@@ -12,109 +12,44 @@ Produce small, well-branded web apps for `finansavisen.no` that:
 
 1. Use the **Finansavisen visual identity** (palette, type, header chrome) out of the box.
 2. Optionally render the **real Finansavisen header** when deployed behind the Zephr CDN, and a faithful local simulation in dev.
-3. Build to a **single Docker image** that Profico DevOps deploys onto the OKD cluster.
+3. Build to a **single Docker image** the FA app platform deploys automatically on every save.
 4. Stay **boring**: Astro pages, server-rendered HTML, near-zero client JS. Add interactivity only where the journalist explicitly asks for it.
 
 You are NOT building a SPA. You are NOT shipping a React app. Reach for islands only when the requested interaction genuinely needs them.
 
 ---
 
-## Step 0 — Bootstrap
+## Before you start
 
-This file was likely **dropped into your context via Slack or a paste**. The journalist almost certainly does not yet have a cloned project on disk. Your first job is to fix that.
-
-### How you'll know which scenario you're in
-
-| Signal                                                          | You're in…                                |
-|-----------------------------------------------------------------|-------------------------------------------|
-| `ls` shows `src/`, `package.json`, `astro.config.mjs` already   | Already-cloned project → skip to Step 1   |
-| `ls` is empty, or only your `AGENTS.md` paste sits in cwd       | Fresh start → run the full bootstrap below |
-
-### 0.1 — Gather inputs from the journalist
-
-Ask, **in plain language**, in one message:
-
-> "Three things before I start:
-> 1. **What should we call your project?** (lowercase, dashes, no spaces — e.g. `market-tracker`)
-> 2. **What's the GitHub repo URL** the team gave you for this project? (looks like `https://github.com/<org>/<repo>.git`)
-> 3. **What's the access token (PAT)?** It starts with `ghp_…` or `github_pat_…`. Paste it once and I'll store it locally — I won't echo it back."
-
-If they don't have the repo URL or PAT yet, tell them to go ask whoever sent them this file. Don't proceed without both — they're needed for the first "save".
-
-The template clone itself does **not** need the PAT — `startsiden/vibecode-template` is public. The PAT is for the journalist's own project repo, where saves go.
-
-### 0.2 — Clone the canonical template
-
-```bash
-git clone https://github.com/startsiden/vibecode-template.git <project-name>
-cd <project-name>
-```
-
-Use the name the journalist gave you in 0.1.
-
-### 0.3 — Detach from the template repo
-
-The freshly-cloned repo still has `origin` pointed at `startsiden/vibecode-template`. Anything pushed would either be rejected (no permission) or — worse — corrupt the template for every other journalist. Repoint immediately:
-
-```bash
-git remote remove origin
-git remote add origin "<journalist's repo URL from 0.1>"
-```
-
-### 0.4 — Store the PAT locally, never in code
-
-```bash
-cp .env.example .env
-```
-
-Then open `.env` and fill:
+This project is created and bootstrapped by the **fa-vibe plugin**:
 
 ```
-GIT_REMOTE=https://<USERNAME>:<PAT>@github.com/<org>/<repo>.git
-GITHUB_PAT=<PAT>
-SIMULATE_ZEPHR=true
+/plugin marketplace add startsiden/hegnar-fa-vibe-plugin
+/plugin install fa-vibe@fa-vibe
+/fa-vibe:new-project
 ```
 
-⚠️ **Never** paste the PAT back into chat, log it, `cat` it, or include it in a commit message. `.env` is already gitignored. If you forget which field is which, re-read `.env.example` — never the live `.env`.
+If you're reading this inside an already-cloned project, bootstrap is done —
+run `skills/tools-init.md` and get on with the work.
 
-### 0.5 — Personalize the project surface
-
-- Edit `package.json` — change `"name"` to match the project name from 0.1.
-- Replace `README.md` with one sentence describing what this app is for. The journalist will add detail later.
-- Edit `src/pages/index.astro` — change the title and copy so it reads as their app, not "Finansavisen Vibe Starter".
-
-Leave everything else untouched. Only edit other files when a `skills/*.md` recipe explicitly says so.
-
-### 0.6 — Set git identity for this repo
-
-```bash
-git config user.name "<journalist's name>"
-git config user.email "<journalist's @finansavisen.no or @hegnar.no email>"
-```
-
-Use `--local` is implicit — never `--global`, never overwrite the journalist's machine-wide git identity.
-
-### 0.7 — First save (sanity check)
-
-Run the `save` skill — `skills/save.md` — to commit the bootstrap and push to their fresh repo. If the push succeeds you've proved PAT + remote are both correct before any real work happens.
-
-### Step 1 — `skills/tools-init.md`
-
-Verify Node 22, pnpm 10, and git are installed; install dependencies; confirm `pnpm dev` boots and renders `http://localhost:3000`. Don't skip — Windows journalists frequently have stale PATH state after a fresh Node install.
-
----
+The plugin owns everything that is true for **any** Finansavisen app: starting a
+project, the save/publish vocabulary, login, databases, and going live. This
+file owns everything specific to **this stack** — Astro, the FA visual identity,
+the Zephr header, and the file layout below.
 
 ## Stack — Locked
 
 | Layer        | Choice                                         | Why                                                  |
 |--------------|------------------------------------------------|------------------------------------------------------|
 | Framework    | **Astro 7**, `output: 'server'`                | Eliminates the React/Zephr hydration conflict        |
-| Adapter      | **`@astrojs/node`** (standalone)               | Matches Profico OKD deploy pattern                   |
+| Adapter      | **`@astrojs/node`** (standalone)               | Runs as a plain container on the app platform        |
 | Styling      | **Tailwind 4** via `@tailwindcss/vite`         | CSS-config, no JS config drift                       |
 | Type         | TypeScript everywhere (`.astro` + `.ts`)       | Catches mistakes the journalist can't                |
 | Font         | `@fontsource-variable/inter`                   | FA brand font, self-hosted                           |
 | Runtime      | Node 22 LTS                                    | Same as hegnar-bellsheep-web                         |
 | Package mgr  | **pnpm** (corepack)                            | Same as the FA family                                |
+| Database     | **Postgres** (shared server, one DB per app)   | Survives redeploys. Never SQLite — see `skills/add-database.md` |
+| Login        | **Handled by the platform, not by the app**    | The app never implements auth — see "Who's logged in" |
 
 **Do not swap any of these.** If the journalist asks for "Next.js" or "React", explain in their words: *"You don't need a heavier framework — Astro keeps the site fast and works correctly with the Finansavisen paywall system. Adding React on top would slow it down and break the header."* Then continue with Astro.
 
@@ -157,6 +92,24 @@ Breakpoint `header:` = 1130px (matches hegnar-web's main-header switch).
 For full customization see `skills/theme.md`.
 
 ---
+
+## Environment variables
+
+Declare it, then import it. Never reach for `process.env` or `import.meta.env`.
+
+1. Add the variable to `env.schema` in `astro.config.mjs`, with its default.
+2. Import it: `import { MY_VAR } from 'astro:env/server'`.
+
+`import.meta.env.X` is replaced by Vite at **build** time, so a value from the
+machine that built the image is what ships — a local `AUTH_DISABLED` would be
+compiled in with no way to switch it back off. Server values must be read at
+runtime, which is what `astro:env/server` does.
+
+Values the browser needs are the exception: name them `PUBLIC_…` and declare
+them with `context: 'client', access: 'public'`.
+
+`.env.example` holds only what you may want to change locally. Defaults live in
+the schema, so there is one place to look.
 
 ## The Finansavisen Header (Zephr)
 
@@ -257,28 +210,46 @@ For pages that are mostly interactive React, keep them as one Astro page with a 
 
 ## GitHub — "Save" Vocabulary
 
-Journalists don't speak git. Map their words to git commands and **always use the `skills/save.md` recipe** instead of running git directly.
+Journalists don't speak git: "save" means commit + push, "publish" means go
+live. Full table in the plugin's `working-with-journalists` skill; the recipe is
+`skills/save.md`.
 
-| They say              | You do                                         |
-|-----------------------|------------------------------------------------|
-| "save"                | `git add -A && git commit && git push`         |
-| "publish" / "deploy"  | Save first, then `skills/deploy.md`            |
-| "undo"                | Confirm scope first, then `git reset`/`revert` |
-| "what changed?"       | `git status` + `git diff --stat`               |
+## Deploy
 
-A **GitHub PAT** and a **remote URL** are provided per project — typically via env or a `.env.local` line: `GITHUB_PAT=ghp_…` and `GIT_REMOTE=https://…@github.com/<org>/<repo>.git`. Configure the remote once with `git remote add origin "$GIT_REMOTE"` and **never log the PAT**. See `skills/save.md`.
+Container on port 3000, built from the Dockerfile. Where it goes depends on
+whether this is a JB app or an FA app — the plugin's `publish` skill routes it.
+Do not propose Vercel, Netlify, Cloudflare Pages or a personal server.
 
----
+## Who's logged in — depends on where the app lives
 
-## Deploy — OKD via Profico
+Two different models. Pick with `AUTH_MODE`, and pick correctly: the wrong one
+locks out exactly the audience the app is for.
 
-The Dockerfile is multi-stage, Node 22-alpine, builds with pnpm, runs `node ./dist/server/entry.mjs` on port 3000. No private npm registry — this template intentionally avoids `@startsiden/*` packages.
+| | JB app | FA app |
+|---|---|---|
+| `AUTH_MODE` | `jb` *(default)* | `zephr` |
+| Lives at | `<name>.apps.journalistboost.ai` | `finansavisen.no/<path>` |
+| Who gets in | Journalists signed into JournalistBoost | Readers, per the paywall |
+| Enforced by | This app, via `src/middleware.ts` | Zephr, at the CDN edge, before the request arrives |
+| App-level login code | Already written — don't touch it | **None.** The app does no login work |
 
-Profico DevOps owns the OKD cluster. `deploy/okd/` contains stub Deployment / Service / Route manifests the journalist hands off via a ticket. Full recipe: `skills/deploy.md`.
+**AUTH_MODE=jb.** `src/middleware.ts` validates JB's shared session and
+redirects anyone without one. It's already there. Don't reimplement it.
 
-Do **not** propose Coolify, Vercel, Netlify, Cloudflare Pages, or any other host. The deployment target is OKD. Period.
+**AUTH_MODE=zephr.** The middleware stands down entirely. Readers have no
+JournalistBoost session, so running the JB check would reject every one of
+them. Gating happens at the edge; use `skills/add-zephr-header.md` for the
+Finansavisen chrome.
 
----
+In both cases: **never build a login page, user table, session or password
+field, and never add an auth library.** The platform handles it, in whichever
+of the two ways applies.
+
+To find out *who* the visitor is — JB apps only — see the plugin's
+`working-with-journalists` skill. Short version: ask JB
+`/api/auth/check-session` server-side, forwarding the request's cookie. Never
+expose that cookie to browser JavaScript. `Astro.locals.user` is populated for
+you, and is `undefined` under `AUTH_MODE=zephr`, so guard before using it.
 
 ## Quality Gates Before You Claim "Done"
 
@@ -286,9 +257,14 @@ Do **not** propose Coolify, Vercel, Netlify, Cloudflare Pages, or any other host
 2. The page renders in the journalist's browser (you ask them to confirm).
 3. If they enabled the FA header, it appears with `SIMULATE_ZEPHR=true` in dev.
 4. `pnpm build` succeeds.
-5. `pnpm exec astro check` passes.
+5. `pnpm check` passes. (That is `tsc`. Do **not** run `astro check` — this
+   template is on TypeScript 7, which has no JS API, so `@astrojs/check` cannot
+   run and the command stops on an install prompt.)
 6. No hardcoded color hex values outside `src/styles/globals.css`.
-7. No hardcoded API URLs — read from `import.meta.env.PUBLIC_*` or `process.env.*`.
+7. No hardcoded API URLs. Every environment variable is declared in the `env.schema`
+   in `astro.config.mjs` and imported from `astro:env/server` — never read
+   `import.meta.env` for a server value, because Vite substitutes those at BUILD
+   time and the value gets frozen into the image.
 
 If any of these fail, fix before reporting success.
 
@@ -309,7 +285,9 @@ If any of these fail, fix before reporting success.
 
 ## Skills Index
 
-Always load the matching skill before acting:
+Always load the matching skill before acting.
+
+**This template's skills** (`skills/`) — everything specific to this stack:
 
 | When the journalist says…                 | Load skill                       |
 |-------------------------------------------|----------------------------------|
@@ -320,9 +298,18 @@ Always load the matching skill before acting:
 | "change the colors" / "make it darker"    | `skills/theme.md`                |
 | "I want a dashboard" / "make it react-ish"| `skills/add-react.md`            |
 | "I have a project, redo it Finansavisen-style" | `skills/rewrite-existing.md` |
-| "publish" / "deploy" / "go live"          | `skills/deploy.md`               |
 
----
+**Plugin skills** (`fa-vibe`) — everything true for any Finansavisen app:
+
+| When the journalist says…                 | Skill                            |
+|-------------------------------------------|----------------------------------|
+| "save this" / "remember" / "keep a list"  | `fa-vibe:add-database`           |
+| "publish" / "deploy" / "go live"          | `fa-vibe:publish`                |
+| anything about how we work here           | `fa-vibe:working-with-journalists` |
+
+If the plugin isn't installed, install it — see "Before you start". Don't
+reimplement its skills here.
+
 
 ## Reference Tabletop
 
@@ -332,6 +319,6 @@ If the journalist's request is ambiguous, prefer this priority order:
 2. Match FA brand (palette + type).
 3. Keep page weight tiny (zero JS by default).
 4. Be reversible (every change should survive `git reset --hard HEAD~1`).
-5. Be deployable to OKD without DevOps modifying our code.
+5. Be deployable to the FA app platform with no hand-editing of infrastructure.
 
 Conflicts resolve top-down. Never trade #1 for any other goal.
