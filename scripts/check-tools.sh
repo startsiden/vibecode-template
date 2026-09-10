@@ -38,7 +38,7 @@ check() {
 echo "Toolchain check for fa-vibe-starter"
 echo "-----------------------------------"
 
-check "node"   "node"   "v$required_node_major\." "install Node $required_node_major LTS"
+check "node"   "node"   "v$required_node_major\." "install Node $required_node_major LTS (macOS: node@$required_node_major is keg-only, add \$(brew --prefix)/opt/node@$required_node_major/bin to PATH)"
 check "pnpm"   "pnpm"   "$required_pnpm_major\."  "run: corepack enable && corepack prepare pnpm@latest --activate"
 check "git"    "git"    ""                         "install Git"
 check "docker" "docker" ""                         "install Docker Desktop (optional, only for build smoke-tests)"
