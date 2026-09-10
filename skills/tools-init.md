@@ -59,6 +59,21 @@ Then:
 
 ```bash
 brew install node@22 git
+```
+
+`node@22` is **keg-only**. Homebrew installs it but deliberately does not symlink
+it, so `node` stays "command not found" and the install looks like it silently
+did nothing. Add it to PATH before going further:
+
+```bash
+echo "export PATH=\"$(brew --prefix)/opt/node@22/bin:\$PATH\"" >> ~/.zshrc
+export PATH="$(brew --prefix)/opt/node@22/bin:$PATH"
+```
+
+`corepack` ships inside that same directory, so the next two lines only resolve
+once the PATH line above has run:
+
+```bash
 corepack enable
 corepack prepare pnpm@latest --activate
 ```
@@ -120,7 +135,11 @@ If that works, you're done. If not, copy the error into chat and ask for help.
 
 ## Common gotchas
 
-- **"corepack: command not found"** → upgrade Node to 22. Old Node versions ship pnpm separately.
+- **"node: command not found" right after `brew install node@22` succeeded** → `node@22` is
+  keg-only, it is installed but not on PATH. Run the two PATH lines in the macOS section.
+  Re-running `brew install` will just say "already installed" and change nothing.
+- **"corepack: command not found"** → same cause on macOS (corepack lives in the keg-only
+  Node directory). On other platforms, upgrade Node to 22; old Node versions ship pnpm separately.
 - **"pnpm: ENOENT"** on Windows → close + reopen PowerShell after install so PATH refreshes.
 - **Port 3000 already in use** → another app is on that port. Either close it, or change `PORT=3000` in `.env`.
 - **"fetch is not defined"** → Node version is below 18. Upgrade.
